@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package hr.fer.rassus.lab1.grpc;
+
+option java_multiple_files = true;
+option java_package = "hr.fer.rassus.lab1.grpc";
+option java_outer_classname = "ReadingsProto";
+
+// The greeting service definition.
+service ReadingsService {
+  rpc GetReadings (ReadingRequest) returns (ReadingResponse) {
+  }
+}
+
+message ReadingRequest {
+}
+
+message ReadingResponse {
+  int32 temperature = 1;
+  int32 pressure = 2;
+  int32 humidity = 3;
+  int32 co = 4;
+  int32 no2 = 5;
+  int32 so2 = 6;
+}
