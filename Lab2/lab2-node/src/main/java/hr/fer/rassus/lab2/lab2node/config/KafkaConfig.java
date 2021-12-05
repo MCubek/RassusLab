@@ -2,6 +2,7 @@ package hr.fer.rassus.lab2.lab2node.config;
 
 import hr.fer.rassus.lab2.lab2node.service.NodeService;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -32,7 +33,7 @@ public class KafkaConfig {
     @Getter
     private String bootstrapAddress;
 
-    @Value("${spring.kafka.consumer.group-id:lab2-node}")
+    @Value("consumer-${node-id}")
     @Getter
     private String consumerGroupId;
 
