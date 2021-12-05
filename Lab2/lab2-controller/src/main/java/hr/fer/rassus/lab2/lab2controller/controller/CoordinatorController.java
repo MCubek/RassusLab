@@ -14,19 +14,19 @@ import org.springframework.web.bind.annotation.RestController;
  */
 
 @RestController
-@RequestMapping("rest/node-controller")
+@RequestMapping("/rest/node-controller")
 @RequiredArgsConstructor
 public class CoordinatorController {
-    private final CoordinatorService koordinatorService;
+    private final CoordinatorService coordinatorService;
 
     @GetMapping("/start")
     public ResponseEntity<Void> startNodes() {
-        return koordinatorService.start();
+        return coordinatorService.start();
     }
 
     @GetMapping("/stop")
     public ResponseEntity<Void> stopNodes() {
-        return koordinatorService.stop();
+        return coordinatorService.stop();
     }
 
 }
