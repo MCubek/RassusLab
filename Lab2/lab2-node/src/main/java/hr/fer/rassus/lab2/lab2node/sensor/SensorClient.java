@@ -6,6 +6,7 @@ import hr.fer.rassus.lab2.lab2node.model.SensorReading;
 import hr.fer.rassus.lab2.lab2node.model.TimedIdentifiedSensorReading;
 import hr.fer.rassus.lab2.lab2node.udpclient.UdpClient;
 import hr.fer.rassus.lab2.lab2node.util.NodeUtil;
+import hr.fer.rassus.stupidudp.network.EmulatedSystemClock;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -36,6 +37,7 @@ public class SensorClient {
     private Set<Node> peers;
 
     private AtomicBoolean running;
+    private List<Thread> threads;
 
     private UdpClient udpClient;
 
@@ -45,6 +47,7 @@ public class SensorClient {
     private int port;
 
     private Map<Long, TimedIdentifiedSensorReading> readings = Collections.synchronizedMap(new HashMap<>());
+    private EmulatedSystemClock clock = new EmulatedSystemClock();
 
 
     public Thread init(Set<Node> peers) throws SocketException {
@@ -65,16 +68,18 @@ public class SensorClient {
         this.running.set(running);
     }
 
-    public void generateAndSendReading() {
+    public synchronized void generateAndSendReading() {
+        log.debug("Generating reading...");
+
         int currentLine = (int) (NodeUtil.getUptimeSeconds() % 100);
         SensorReading currentReading = SensorReadingsAdapter.getReadingFromLine(currentLine);
 
         TimedIdentifiedSensorReading timedIdentifiedSensorReading = new TimedIdentifiedSensorReading(currentReading, id);
         readings.put(UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE, timedIdentifiedSensorReading);
 
-        log.info("Generated reading: {}", timedIdentifiedSensorReading);
+        log.info("Generated new reading.");
 
-        List<Thread> threads = new ArrayList<>();
+        threads = new ArrayList<>();
         for (Node node : peers) {
             Thread thread = new Thread(() -> {
                 try {
@@ -86,15 +91,28 @@ public class SensorClient {
             thread.start();
             threads.add(thread);
         }
+        log.debug("Started all threads for sending current reading.");
 
-        threads.forEach(t -> {
+        boolean interrupted = false;
+
+        for (Thread t : threads) {
             try {
                 t.join();
             } catch (InterruptedException e) {
-                log.error("Sending thread interrupted.", e);
+                interrupted = true;
+                log.debug("Sending thread interrupted.");
             }
-        });
-        log.info("Sent reading to all peers.");
+        }
+        if (! interrupted) {
+            log.info("Sent reading to all peers.");
+        } else {
+            log.debug("Sending thread interrupted and readings have not been sent to all peers.");
+        }
+    }
+
+    public void interrupt() {
+        threads.forEach(Thread::interrupt);
+        udpClient.getSocket().close();
     }
 
     public void printAllData() {

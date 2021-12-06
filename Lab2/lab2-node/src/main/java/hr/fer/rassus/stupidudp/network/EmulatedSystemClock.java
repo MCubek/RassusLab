@@ -10,7 +10,6 @@ package hr.fer.rassus.stupidudp.network;
 import java.util.Random;
 
 /**
- *
  * @author Aleksandar
  */
 public class EmulatedSystemClock {
@@ -21,14 +20,14 @@ public class EmulatedSystemClock {
     public EmulatedSystemClock() {
         startTime = System.currentTimeMillis();
         Random r = new Random();
-        jitter = (r.nextInt(20 )) / 100d; //divide by 10 to get the interval between [0, 20], and then divide by 100 to get percentage
+        jitter = (r.nextInt(20)) / 100d; //divide by 10 to get the interval between [0, 20], and then divide by 100 to get percentage
     }
 
     public long currentTimeMillis() {
         long current = System.currentTimeMillis();
-        long diff =current - startTime;
+        long diff = current - startTime;
         double coef = diff / 1000;
-        return startTime + Math.round(diff * Math.pow((1+jitter), coef));
+        return startTime + Math.round(diff * Math.pow((1 + jitter), coef));
     }
 
 

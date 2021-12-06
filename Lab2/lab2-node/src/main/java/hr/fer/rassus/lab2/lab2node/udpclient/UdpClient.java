@@ -2,13 +2,13 @@ package hr.fer.rassus.lab2.lab2node.udpclient;
 
 import hr.fer.rassus.lab2.lab2node.model.Node;
 import hr.fer.rassus.lab2.lab2node.model.TimedIdentifiedSensorReading;
-import hr.fer.rassus.lab2.lab2node.model.message.AckMessage;
-import hr.fer.rassus.lab2.lab2node.model.message.DataMessage;
-import hr.fer.rassus.lab2.lab2node.model.message.Message;
+import hr.fer.rassus.lab2.lab2node.udpclient.message.AckMessage;
+import hr.fer.rassus.lab2.lab2node.udpclient.message.DataMessage;
+import hr.fer.rassus.lab2.lab2node.udpclient.message.Message;
 import hr.fer.rassus.lab2.lab2node.util.MessageUtil;
 import hr.fer.rassus.stupidudp.network.SimpleSimulatedDatagramSocket;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -33,6 +33,7 @@ public class UdpClient {
 
     private final AtomicBoolean running;
     private final Map<Long, TimedIdentifiedSensorReading> readings;
+    @Getter
     private final SimpleSimulatedDatagramSocket socket;
     private Thread listenerThread;
 
@@ -53,6 +54,7 @@ public class UdpClient {
     }
 
     public Thread startListener() {
+        log.debug("Starting udp listener on port {}", port);
         listenerThread = new Thread(() -> {
             byte[] rcvBuf = new byte[2048];
 
@@ -60,6 +62,10 @@ public class UdpClient {
                 DatagramPacket response = new DatagramPacket(rcvBuf, rcvBuf.length);
                 try {
                     socket.receive(response);
+                    log.debug("Packet received with size {}.", response.getLength());
+                } catch (SocketException e) {
+                    log.debug("Socket closed. Exiting.");
+                    break;
                 } catch (IOException e) {
                     log.error("Error while receiving response", e);
                     continue;
@@ -67,8 +73,8 @@ public class UdpClient {
 
                 Message receivedMessage;
                 try {
-                    receivedMessage = MessageUtil.deserializeMessage(response.getData(),response.getOffset(),response.getLength());
-                    log.debug("Received message {}.", receivedMessage);
+                    receivedMessage = MessageUtil.deserializeMessage(response.getData(), response.getOffset(), response.getLength());
+                    log.debug("Received message {}.", receivedMessage.toString());
                 } catch (IOException | ClassNotFoundException e) {
                     log.error("Error while parsing message.", e);
                     continue;
@@ -97,12 +103,15 @@ public class UdpClient {
         DatagramPacket sendPacket = new DatagramPacket(sendBuf,
                 sendBuf.length, packet.getAddress(), packet.getPort());
 
+        log.debug("Received data from node {}, sending ack message...", receivedMessage.getNodeId());
         socket.send(sendPacket);
+        log.debug("Ack message sent to node {}", receivedMessage.getNodeId());
 
-        readings.put(receivedMessage.getMessageId(), receivedMessage.getReading());
+        readings.putIfAbsent(receivedMessage.getMessageId(), receivedMessage.getReading());
     }
 
     private void handleAckMessage(AckMessage receivedMessage) {
+        log.debug("Received ack message from node {},sending to queue.", receivedMessage.getNodeId());
         int nodeId = receivedMessage.getNodeId();
 
         BlockingQueue<AckMessage> queue = nodeAckMessages.computeIfAbsent(nodeId, k -> new LinkedBlockingQueue<>());
@@ -110,6 +119,7 @@ public class UdpClient {
     }
 
     public void sendReadingToNode(TimedIdentifiedSensorReading currentReading, Node node) throws IOException {
+        log.debug("Sending reading to node {}.", node.getId());
         long messageId = UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE;
 
         byte[] sendBuf = MessageUtil.serializeMessage(new DataMessage(messageId, id, currentReading));
@@ -122,18 +132,26 @@ public class UdpClient {
         boolean ack = false;
         do {
             socket.send(packet);
+            log.debug("Reading sent to node {}. Waiting for ack...", node.getId());
 
-            AckMessage ackMessage = null;
+            AckMessage ackMessage;
             try {
                 ackMessage = queue.poll(4, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
-                if (running.get())
+                if (this.running.get())
                     continue;
+                else return;
             }
-            if (ackMessage != null && ackMessage.getMessageId() == messageId)
+            if (ackMessage != null && ackMessage.getMessageId() == messageId) {
                 ack = true;
-
-        } while (! ack);
-        log.info("Reading sent to node {}.", node.getId());
+                log.debug("Valid ack received from node {}.", node.getId());
+            } else {
+                log.debug("Valid ak not received, retrying...");
+            }
+        } while (! ack && this.running.get());
+        if (ack)
+            log.info("Reading sent and acknowledged to node {}.", node.getId());
+        else
+            log.debug("Sending thread interrupted and is exiting.");
     }
 }

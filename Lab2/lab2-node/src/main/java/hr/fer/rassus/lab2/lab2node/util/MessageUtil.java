@@ -1,10 +1,10 @@
 package hr.fer.rassus.lab2.lab2node.util;
 
 import hr.fer.rassus.lab2.lab2node.model.TimedIdentifiedSensorReading;
-import hr.fer.rassus.lab2.lab2node.model.message.AckMessage;
-import hr.fer.rassus.lab2.lab2node.model.message.DataMessage;
-import hr.fer.rassus.lab2.lab2node.model.message.Message;
-import hr.fer.rassus.lab2.lab2node.model.message.MessageType;
+import hr.fer.rassus.lab2.lab2node.udpclient.message.AckMessage;
+import hr.fer.rassus.lab2.lab2node.udpclient.message.DataMessage;
+import hr.fer.rassus.lab2.lab2node.udpclient.message.Message;
+import hr.fer.rassus.lab2.lab2node.udpclient.message.MessageType;
 import org.springframework.util.SerializationUtils;
 
 import java.io.*;
@@ -61,7 +61,7 @@ public class MessageUtil {
 
     private static byte[] serializeObject(Serializable object) throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream out = null;
+        ObjectOutputStream out;
         byte[] bytes;
         try {
             out = new ObjectOutputStream(bos);

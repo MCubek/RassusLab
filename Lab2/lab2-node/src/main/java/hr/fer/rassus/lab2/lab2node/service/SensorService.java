@@ -43,6 +43,7 @@ public class SensorService {
             }
         });
         sendThread.start();
+        log.debug("Started generate readings and send loop thread");
 
         resultsThread = new Thread(() -> {
             while (sensorClient.isRunning() && ! resultsThread.isInterrupted()) {
@@ -56,18 +57,24 @@ public class SensorService {
             }
         });
         resultsThread.start();
+        log.debug("Started printResults loop thread.");
     }
 
     public void stopSensor() {
-        log.info("Sensor stopping.");
+        log.info("Sensor stopping...");
 
         sensorClient.setRunning(false);
-        if (listenerThread != null)
+        if (listenerThread != null) {
             listenerThread.interrupt();
-        if (sendThread != null)
+        }
+        if (sendThread != null) {
             sendThread.interrupt();
-        if (resultsThread != null)
+        }
+        if (resultsThread != null) {
             resultsThread.interrupt();
+        }
+        sensorClient.interrupt();
+        log.debug("All top level worker threads interrupted.");
 
         sensorClient.printAllData();
     }

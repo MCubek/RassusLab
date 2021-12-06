@@ -1,4 +1,4 @@
-package hr.fer.rassus.lab2.lab2node.model.message;
+package hr.fer.rassus.lab2.lab2node.udpclient.message;
 
 import lombok.Getter;
 

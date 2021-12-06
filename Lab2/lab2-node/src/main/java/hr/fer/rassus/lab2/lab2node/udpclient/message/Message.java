@@ -1,9 +1,8 @@
-package hr.fer.rassus.lab2.lab2node.model.message;
+package hr.fer.rassus.lab2.lab2node.udpclient.message;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-
-import java.io.Serializable;
+import lombok.ToString;
 
 /**
  * @author MatejCubek
@@ -12,6 +11,7 @@ import java.io.Serializable;
  */
 @AllArgsConstructor
 @Getter
+@ToString
 public class Message {
     private final MessageType messageType;
     private final long messageId;
