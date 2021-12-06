@@ -9,8 +9,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
+import java.net.SocketException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -37,7 +39,7 @@ public class SensorClient {
 
     private Map<Long, SensorReading> readings = Collections.synchronizedMap(new HashMap<>());
 
-    public Thread init(Set<Node> peers) {
+    public Thread init(Set<Node> peers) throws SocketException {
         longitude = 15.87 + (16 - 15.87) * random.nextDouble();
         latitude = 45.75 + (45.85 - 45.75) * random.nextDouble();
         this.peers = peers;

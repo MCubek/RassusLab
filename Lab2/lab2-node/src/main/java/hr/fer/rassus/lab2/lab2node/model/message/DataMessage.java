@@ -11,10 +11,12 @@ import lombok.Getter;
  */
 @Getter
 public class DataMessage extends Message {
+    private final int nodeId;
     private final SensorReading reading;
 
-    public DataMessage(long messageId, SensorReading reading) {
+    public DataMessage(long messageId,int nodeId, SensorReading reading) {
         super(MessageType.DATA, messageId);
+        this.nodeId = nodeId;
         this.reading = reading;
     }
 }

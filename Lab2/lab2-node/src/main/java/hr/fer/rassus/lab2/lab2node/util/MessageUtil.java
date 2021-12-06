@@ -24,10 +24,12 @@ public class MessageUtil {
         switch (message.getMessageType()) {
             case DATA -> {
                 DataMessage dataMessage = (DataMessage) message;
+                dos.writeInt(dataMessage.getNodeId());
                 dos.write(serializeObject(dataMessage.getReading()));
             }
             case ACK -> {
                 AckMessage ackMessage = (AckMessage) message;
+                dos.writeInt(ackMessage.getNodeId());
             }
         }
 
@@ -46,8 +48,8 @@ public class MessageUtil {
         Message message;
 
         message = switch (messageType) {
-            case DATA -> new DataMessage(id, (SensorReading) deserializeObject(dos.readAllBytes()));
-            case ACK -> new AckMessage(id);
+            case DATA -> new DataMessage(id, dos.readInt(), (SensorReading) deserializeObject(dos.readAllBytes()));
+            case ACK -> new AckMessage(id, dos.readInt());
         };
 
         dos.close();
