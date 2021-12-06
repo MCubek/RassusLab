@@ -41,6 +41,8 @@ public class SensorClient {
 
     @Value("${node-id}")
     private int id;
+    @Value("${node-port}")
+    private int port;
 
     private Map<Long, TimedIdentifiedSensorReading> readings = Collections.synchronizedMap(new HashMap<>());
 
@@ -51,7 +53,7 @@ public class SensorClient {
         this.peers = peers;
         this.running = new AtomicBoolean(true);
 
-        udpClient = new UdpClient(running, readings);
+        udpClient = new UdpClient(running, readings, id, port);
         return udpClient.startListener();
     }
 

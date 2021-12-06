@@ -36,24 +36,25 @@ public class UdpClient {
     private final SimpleSimulatedDatagramSocket socket;
     private Thread listenerThread;
 
-    @Value("${node-port}")
-    private int port;
-    @Value("${node-id}")
-    private int id;
+    @SuppressWarnings("FieldCanBeLocal")
+    private final int port;
+    private final int id;
 
     private final Map<Integer, BlockingQueue<AckMessage>> nodeAckMessages;
 
-    public UdpClient(AtomicBoolean running, Map<Long, TimedIdentifiedSensorReading> readings) throws SocketException {
+    public UdpClient(AtomicBoolean running, Map<Long, TimedIdentifiedSensorReading> readings, int id, int port) throws SocketException {
         this.running = running;
         this.readings = readings;
+        this.id = id;
+        this.port = port;
 
         nodeAckMessages = Collections.synchronizedMap(new HashMap<>());
-        socket = new SimpleSimulatedDatagramSocket(port, 0.3, 1000);
+        socket = new SimpleSimulatedDatagramSocket(this.port, 0.3, 200);
     }
 
     public Thread startListener() {
         listenerThread = new Thread(() -> {
-            byte[] rcvBuf = new byte[256];
+            byte[] rcvBuf = new byte[2048];
 
             while (running.get() && ! listenerThread.isInterrupted()) {
                 DatagramPacket response = new DatagramPacket(rcvBuf, rcvBuf.length);
@@ -66,7 +67,7 @@ public class UdpClient {
 
                 Message receivedMessage;
                 try {
-                    receivedMessage = MessageUtil.deserializeMessage(response.getData());
+                    receivedMessage = MessageUtil.deserializeMessage(response.getData(),response.getOffset(),response.getLength());
                     log.debug("Received message {}.", receivedMessage);
                 } catch (IOException | ClassNotFoundException e) {
                     log.error("Error while parsing message.", e);
@@ -124,7 +125,7 @@ public class UdpClient {
 
             AckMessage ackMessage = null;
             try {
-                ackMessage = queue.poll(1, TimeUnit.SECONDS);
+                ackMessage = queue.poll(4, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 if (running.get())
                     continue;

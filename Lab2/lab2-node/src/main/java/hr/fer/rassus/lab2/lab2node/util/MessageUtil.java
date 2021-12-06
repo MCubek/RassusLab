@@ -5,8 +5,10 @@ import hr.fer.rassus.lab2.lab2node.model.message.AckMessage;
 import hr.fer.rassus.lab2.lab2node.model.message.DataMessage;
 import hr.fer.rassus.lab2.lab2node.model.message.Message;
 import hr.fer.rassus.lab2.lab2node.model.message.MessageType;
+import org.springframework.util.SerializationUtils;
 
 import java.io.*;
+import java.util.Objects;
 
 /**
  * @author MatejCubek
@@ -25,7 +27,7 @@ public class MessageUtil {
             case DATA -> {
                 DataMessage dataMessage = (DataMessage) message;
                 dos.writeInt(dataMessage.getNodeId());
-                dos.write(serializeObject(dataMessage.getReading()));
+                dos.write(Objects.requireNonNull(SerializationUtils.serialize(dataMessage.getReading())));
             }
             case ACK -> {
                 AckMessage ackMessage = (AckMessage) message;
@@ -38,8 +40,8 @@ public class MessageUtil {
     }
 
 
-    public static Message deserializeMessage(byte[] buf) throws IOException, ClassNotFoundException {
-        ByteArrayInputStream bis = new ByteArrayInputStream(buf);
+    public static Message deserializeMessage(byte[] buf, int offset, int length) throws IOException, ClassNotFoundException {
+        ByteArrayInputStream bis = new ByteArrayInputStream(buf, offset, length);
         DataInputStream dos = new DataInputStream(bis);
 
         MessageType messageType = MessageType.getTypeFromNumber(dos.readByte());
@@ -48,7 +50,7 @@ public class MessageUtil {
         Message message;
 
         message = switch (messageType) {
-            case DATA -> new DataMessage(id, dos.readInt(), (TimedIdentifiedSensorReading) deserializeObject(dos.readAllBytes()));
+            case DATA -> new DataMessage(id, dos.readInt(), (TimedIdentifiedSensorReading) SerializationUtils.deserialize(dos.readAllBytes()));
             case ACK -> new AckMessage(id, dos.readInt());
         };
 
