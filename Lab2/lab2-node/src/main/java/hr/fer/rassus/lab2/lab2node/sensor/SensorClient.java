@@ -9,9 +9,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.net.SocketException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -63,11 +63,27 @@ public class SensorClient {
 
         log.info("Generated reading: {}", currentReading);
 
-        //TODO
-    }
+        List<Thread> threads = new ArrayList<>();
+        for (Node node : peers) {
+            Thread thread = new Thread(() -> {
+                try {
+                    udpClient.sendReadingToNode(currentReading, node);
+                } catch (IOException e) {
+                    log.error("Error while sending message to node.", e);
+                }
+            });
+            thread.start();
+            threads.add(thread);
+        }
 
-    public void getAndStorePeerReadings() {
-        // TODO
+        threads.forEach(t -> {
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                log.error("Sending thread interrupted.", e);
+            }
+        });
+        log.info("Sent reading to all peers.");
     }
 
     public void printAllData() {

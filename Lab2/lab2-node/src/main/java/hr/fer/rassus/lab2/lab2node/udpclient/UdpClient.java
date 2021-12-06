@@ -1,5 +1,6 @@
 package hr.fer.rassus.lab2.lab2node.udpclient;
 
+import hr.fer.rassus.lab2.lab2node.model.Node;
 import hr.fer.rassus.lab2.lab2node.model.SensorReading;
 import hr.fer.rassus.lab2.lab2node.model.message.AckMessage;
 import hr.fer.rassus.lab2.lab2node.model.message.DataMessage;
@@ -11,12 +12,15 @@ import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -102,5 +106,32 @@ public class UdpClient {
 
         BlockingQueue<AckMessage> queue = nodeAckMessages.computeIfAbsent(nodeId, k -> new LinkedBlockingQueue<>());
         queue.add(receivedMessage);
+    }
+
+    public void sendReadingToNode(SensorReading currentReading, Node node) throws IOException {
+        long messageId = UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE;
+
+        byte[] sendBuf = MessageUtil.serializeMessage(new DataMessage(messageId, id, currentReading));
+
+        DatagramPacket packet = new DatagramPacket(sendBuf, sendBuf.length,
+                InetAddress.getByName(node.getAddress()), node.getPort());
+
+        BlockingQueue<AckMessage> queue = nodeAckMessages.computeIfAbsent(node.getId(), (k) -> new LinkedBlockingQueue<>());
+
+        boolean ack = false;
+        do {
+            socket.send(packet);
+
+            AckMessage ackMessage = null;
+            try {
+                ackMessage = queue.poll(1, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                if (running.get())
+                    continue;
+            }
+            if (ackMessage != null && ackMessage.getMessageId() == messageId)
+                ack = true;
+
+        } while (! ack);
     }
 }
