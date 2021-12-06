@@ -3,6 +3,7 @@ package hr.fer.rassus.lab2.lab2node.sensor;
 
 import hr.fer.rassus.lab2.lab2node.model.Node;
 import hr.fer.rassus.lab2.lab2node.model.SensorReading;
+import hr.fer.rassus.lab2.lab2node.udpclient.UdpClient;
 import hr.fer.rassus.lab2.lab2node.util.NodeUtil;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,8 +11,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -33,10 +33,18 @@ public class SensorClient {
 
     private AtomicBoolean running;
 
-    public void init(Set<Node> peers) {
+    private UdpClient udpClient;
+
+    private Map<Long, SensorReading> readings = Collections.synchronizedMap(new HashMap<>());
+
+    public Thread init(Set<Node> peers) {
         longitude = 15.87 + (16 - 15.87) * random.nextDouble();
         latitude = 45.75 + (45.85 - 45.75) * random.nextDouble();
         this.peers = peers;
+        this.running = new AtomicBoolean(true);
+
+        udpClient = new UdpClient(running, readings);
+        return udpClient.startListener();
     }
 
     public boolean isRunning() {
@@ -47,9 +55,9 @@ public class SensorClient {
         this.running.set(running);
     }
 
-    public void readAndSendReadings() {
+    public void generateAndSendReading() {
         int currentLine = (int) (NodeUtil.getUptimeSeconds() % 100);
-        SensorReading currentReading = SensorReadingHelper.getReadingFromLine(currentLine);
+        SensorReading currentReading = SensorReadingsAdapter.getReadingFromLine(currentLine);
 
         log.info("Generated reading: {}", currentReading);
 

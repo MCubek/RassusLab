@@ -16,23 +16,24 @@ import java.util.Set;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class SensorService{
+public class SensorService {
 
     private final SensorClient sensorClient;
 
-    private Thread workThread;
+    private Thread listenerThread;
+    private Thread sendThread;
     private Thread resultsThread;
 
     public void startSensor(Set<Node> peers) {
         log.info("Starting sensor client.");
-        sensorClient.init(peers);
+        listenerThread = sensorClient.init(peers);
 
         log.info("Sensor started on longitude:{} and latitude:{}.", sensorClient.getLongitude(), sensorClient.getLatitude());
 
 
-        workThread = new Thread(() -> {
-            while (sensorClient.isRunning() && ! workThread.isInterrupted()) {
-                sensorClient.readAndSendReadings();
+        sendThread = new Thread(() -> {
+            while (sensorClient.isRunning() && ! sendThread.isInterrupted()) {
+                sensorClient.generateAndSendReading();
                 try {
                     //noinspection BusyWait
                     Thread.sleep(1000);
@@ -40,9 +41,7 @@ public class SensorService{
                 }
             }
         });
-        workThread.start();
-
-        sensorClient.getAndStorePeerReadings();
+        sendThread.start();
 
         resultsThread = new Thread(() -> {
             while (sensorClient.isRunning() && ! resultsThread.isInterrupted()) {
@@ -62,7 +61,8 @@ public class SensorService{
         log.info("Sensor finished with transmission.");
 
         sensorClient.setRunning(false);
-        workThread.interrupt();
+        listenerThread.interrupt();
+        sendThread.interrupt();
         resultsThread.interrupt();
 
         sensorClient.printAllData();

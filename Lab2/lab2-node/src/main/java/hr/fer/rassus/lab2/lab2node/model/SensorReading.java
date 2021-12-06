@@ -2,6 +2,8 @@ package hr.fer.rassus.lab2.lab2node.model;
 
 import lombok.*;
 
+import java.io.Serializable;
+
 /**
  * @author MatejCubek
  * @project lab1-server
@@ -13,7 +15,7 @@ import lombok.*;
 @Getter
 @Setter
 @ToString
-public class SensorReading {
+public class SensorReading implements Serializable {
     private Integer temperature;
     private Integer pressure;
     private Integer humidity;
