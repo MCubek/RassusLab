@@ -1,7 +1,6 @@
 package hr.fer.rassus.lab2.lab2node.model.message;
 
-import hr.fer.rassus.lab2.lab2node.model.SensorReading;
-import lombok.AllArgsConstructor;
+import hr.fer.rassus.lab2.lab2node.model.TimedSensorReading;
 import lombok.Getter;
 
 /**
@@ -12,9 +11,9 @@ import lombok.Getter;
 @Getter
 public class DataMessage extends Message {
     private final int nodeId;
-    private final SensorReading reading;
+    private final TimedSensorReading reading;
 
-    public DataMessage(long messageId,int nodeId, SensorReading reading) {
+    public DataMessage(long messageId,int nodeId, TimedSensorReading reading) {
         super(MessageType.DATA, messageId);
         this.nodeId = nodeId;
         this.reading = reading;

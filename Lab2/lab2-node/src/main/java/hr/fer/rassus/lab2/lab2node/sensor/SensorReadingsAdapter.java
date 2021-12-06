@@ -35,7 +35,7 @@ public class SensorReadingsAdapter {
             return reading;
         } catch (IOException e) {
             log.error("Error while reading csv.", e);
-            return null;
+            throw new RuntimeException(e);
         }
     }
 

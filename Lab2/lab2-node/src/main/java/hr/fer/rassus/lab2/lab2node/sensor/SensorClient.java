@@ -3,6 +3,7 @@ package hr.fer.rassus.lab2.lab2node.sensor;
 
 import hr.fer.rassus.lab2.lab2node.model.Node;
 import hr.fer.rassus.lab2.lab2node.model.SensorReading;
+import hr.fer.rassus.lab2.lab2node.model.TimedSensorReading;
 import hr.fer.rassus.lab2.lab2node.udpclient.UdpClient;
 import hr.fer.rassus.lab2.lab2node.util.NodeUtil;
 import lombok.Getter;
@@ -37,7 +38,7 @@ public class SensorClient {
 
     private UdpClient udpClient;
 
-    private Map<Long, SensorReading> readings = Collections.synchronizedMap(new HashMap<>());
+    private Map<Long, TimedSensorReading> readings = Collections.synchronizedMap(new HashMap<>());
 
     public Thread init(Set<Node> peers) throws SocketException {
         longitude = 15.87 + (16 - 15.87) * random.nextDouble();
@@ -61,13 +62,15 @@ public class SensorClient {
         int currentLine = (int) (NodeUtil.getUptimeSeconds() % 100);
         SensorReading currentReading = SensorReadingsAdapter.getReadingFromLine(currentLine);
 
-        log.info("Generated reading: {}", currentReading);
+        TimedSensorReading timedSensorReading = new TimedSensorReading(currentReading);
+
+        log.info("Generated reading: {}", timedSensorReading);
 
         List<Thread> threads = new ArrayList<>();
         for (Node node : peers) {
             Thread thread = new Thread(() -> {
                 try {
-                    udpClient.sendReadingToNode(currentReading, node);
+                    udpClient.sendReadingToNode(timedSensorReading, node);
                 } catch (IOException e) {
                     log.error("Error while sending message to node.", e);
                 }
