@@ -15,6 +15,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.net.SocketException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -49,10 +50,15 @@ public class NodeService {
         String message = stringJsonNodeConsumerRecord.value().get("message").asText();
         log.info("Command message received: {}", message);
 
-        switch (message) {
-            case "START" -> startNode();
-            case "STOP" -> stopNode();
-            default -> throw new IllegalArgumentException("Unknown message!");
+        try {
+            switch (message) {
+                case "START" -> startNode();
+                case "STOP" -> stopNode();
+                default -> throw new IllegalArgumentException("Unknown message!");
+            }
+        } catch (RuntimeException e) {
+            log.error(e.getMessage());
+            stopNode();
         }
 
     }
@@ -85,7 +91,12 @@ public class NodeService {
         }
 
         //Start sensor
-        sensorService.startSensor(peers);
+        try {
+            sensorService.startSensor(peers);
+        } catch (SocketException e) {
+            log.error("Error while starting sensor.", e);
+            throw new RuntimeException(e);
+        }
     }
 
     private void stopNode() {

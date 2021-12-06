@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.net.SocketException;
 import java.util.Set;
 
 /**
@@ -24,7 +25,7 @@ public class SensorService {
     private Thread sendThread;
     private Thread resultsThread;
 
-    public void startSensor(Set<Node> peers) {
+    public void startSensor(Set<Node> peers) throws SocketException {
         log.info("Starting sensor client.");
         listenerThread = sensorClient.init(peers);
 
@@ -58,12 +59,15 @@ public class SensorService {
     }
 
     public void stopSensor() {
-        log.info("Sensor finished with transmission.");
+        log.info("Sensor stopping.");
 
         sensorClient.setRunning(false);
-        listenerThread.interrupt();
-        sendThread.interrupt();
-        resultsThread.interrupt();
+        if (listenerThread != null)
+            listenerThread.interrupt();
+        if (sendThread != null)
+            sendThread.interrupt();
+        if (resultsThread != null)
+            resultsThread.interrupt();
 
         sensorClient.printAllData();
     }
