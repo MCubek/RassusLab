@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author MatejCubek
@@ -30,12 +31,20 @@ public class SensorClient {
     private double latitude;
     private Set<Node> peers;
 
-    private boolean running;
+    private AtomicBoolean running;
 
     public void init(Set<Node> peers) {
         longitude = 15.87 + (16 - 15.87) * random.nextDouble();
         latitude = 45.75 + (45.85 - 45.75) * random.nextDouble();
         this.peers = peers;
+    }
+
+    public boolean isRunning() {
+        return running.get();
+    }
+
+    public void setRunning(boolean running) {
+        this.running.set(running);
     }
 
     public void readAndSendReadings() {
@@ -47,17 +56,8 @@ public class SensorClient {
         //TODO
     }
 
-    private SensorReading getRemoteReadings() {
+    public void getAndStorePeerReadings() {
         // TODO
-        return null;
-    }
-
-    public boolean isRunning() {
-        return running;
-    }
-
-    public void setRunning(boolean running) {
-        this.running = running;
     }
 
     public void printAllData() {

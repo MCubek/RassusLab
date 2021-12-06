@@ -42,6 +42,8 @@ public class SensorService{
         });
         workThread.start();
 
+        sensorClient.getAndStorePeerReadings();
+
         resultsThread = new Thread(() -> {
             while (sensorClient.isRunning() && ! resultsThread.isInterrupted()) {
                 sensorClient.printLastIntervalData();
