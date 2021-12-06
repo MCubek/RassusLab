@@ -3,13 +3,14 @@ package hr.fer.rassus.lab2.lab2node.sensor;
 
 import hr.fer.rassus.lab2.lab2node.model.Node;
 import hr.fer.rassus.lab2.lab2node.model.SensorReading;
-import hr.fer.rassus.lab2.lab2node.model.TimedSensorReading;
+import hr.fer.rassus.lab2.lab2node.model.TimedIdentifiedSensorReading;
 import hr.fer.rassus.lab2.lab2node.udpclient.UdpClient;
 import hr.fer.rassus.lab2.lab2node.util.NodeUtil;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -38,7 +39,11 @@ public class SensorClient {
 
     private UdpClient udpClient;
 
-    private Map<Long, TimedSensorReading> readings = Collections.synchronizedMap(new HashMap<>());
+    @Value("${node-id}")
+    private int id;
+
+    private Map<Long, TimedIdentifiedSensorReading> readings = Collections.synchronizedMap(new HashMap<>());
+
 
     public Thread init(Set<Node> peers) throws SocketException {
         longitude = 15.87 + (16 - 15.87) * random.nextDouble();
@@ -62,15 +67,16 @@ public class SensorClient {
         int currentLine = (int) (NodeUtil.getUptimeSeconds() % 100);
         SensorReading currentReading = SensorReadingsAdapter.getReadingFromLine(currentLine);
 
-        TimedSensorReading timedSensorReading = new TimedSensorReading(currentReading);
+        TimedIdentifiedSensorReading timedIdentifiedSensorReading = new TimedIdentifiedSensorReading(currentReading, id);
+        readings.put(UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE, timedIdentifiedSensorReading);
 
-        log.info("Generated reading: {}", timedSensorReading);
+        log.info("Generated reading: {}", timedIdentifiedSensorReading);
 
         List<Thread> threads = new ArrayList<>();
         for (Node node : peers) {
             Thread thread = new Thread(() -> {
                 try {
-                    udpClient.sendReadingToNode(timedSensorReading, node);
+                    udpClient.sendReadingToNode(timedIdentifiedSensorReading, node);
                 } catch (IOException e) {
                     log.error("Error while sending message to node.", e);
                 }

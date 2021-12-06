@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hr.fer.rassus.lab2.lab2node.model.Node;
 import hr.fer.rassus.lab2.lab2node.util.NodeUtil;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +40,8 @@ public class NodeService {
     private final KafkaTemplate<String, JsonNode> kafkaTemplate;
 
     @Value("${spring.kafka.register-topic}")
-    private final String registerTopic;
+    @Getter
+    private String registerTopic;
 
     // Initialized
     private final Set<Node> peers = Collections.synchronizedSet(new HashSet<>());
@@ -74,7 +76,7 @@ public class NodeService {
     }
 
     private void startNode() {
-        JsonNode peer = null;
+        JsonNode peer;
         try {
             peer = mapper.readTree(mapper.writeValueAsString(nodeUtil.thisNode()));
         } catch (JsonProcessingException e) {

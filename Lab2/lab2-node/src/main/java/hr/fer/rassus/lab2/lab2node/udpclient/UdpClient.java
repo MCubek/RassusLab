@@ -1,7 +1,7 @@
 package hr.fer.rassus.lab2.lab2node.udpclient;
 
 import hr.fer.rassus.lab2.lab2node.model.Node;
-import hr.fer.rassus.lab2.lab2node.model.TimedSensorReading;
+import hr.fer.rassus.lab2.lab2node.model.TimedIdentifiedSensorReading;
 import hr.fer.rassus.lab2.lab2node.model.message.AckMessage;
 import hr.fer.rassus.lab2.lab2node.model.message.DataMessage;
 import hr.fer.rassus.lab2.lab2node.model.message.Message;
@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class UdpClient {
 
     private final AtomicBoolean running;
-    private final Map<Long, TimedSensorReading> readings;
+    private final Map<Long, TimedIdentifiedSensorReading> readings;
     private final SimpleSimulatedDatagramSocket socket;
     private Thread listenerThread;
 
@@ -43,7 +43,7 @@ public class UdpClient {
 
     private final Map<Integer, BlockingQueue<AckMessage>> nodeAckMessages;
 
-    public UdpClient(AtomicBoolean running, Map<Long, TimedSensorReading> readings) throws SocketException {
+    public UdpClient(AtomicBoolean running, Map<Long, TimedIdentifiedSensorReading> readings) throws SocketException {
         this.running = running;
         this.readings = readings;
 
@@ -108,7 +108,7 @@ public class UdpClient {
         queue.add(receivedMessage);
     }
 
-    public void sendReadingToNode(TimedSensorReading currentReading, Node node) throws IOException {
+    public void sendReadingToNode(TimedIdentifiedSensorReading currentReading, Node node) throws IOException {
         long messageId = UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE;
 
         byte[] sendBuf = MessageUtil.serializeMessage(new DataMessage(messageId, id, currentReading));

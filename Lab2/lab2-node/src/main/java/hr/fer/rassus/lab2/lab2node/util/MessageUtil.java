@@ -1,7 +1,6 @@
 package hr.fer.rassus.lab2.lab2node.util;
 
-import hr.fer.rassus.lab2.lab2node.model.SensorReading;
-import hr.fer.rassus.lab2.lab2node.model.TimedSensorReading;
+import hr.fer.rassus.lab2.lab2node.model.TimedIdentifiedSensorReading;
 import hr.fer.rassus.lab2.lab2node.model.message.AckMessage;
 import hr.fer.rassus.lab2.lab2node.model.message.DataMessage;
 import hr.fer.rassus.lab2.lab2node.model.message.Message;
@@ -49,7 +48,7 @@ public class MessageUtil {
         Message message;
 
         message = switch (messageType) {
-            case DATA -> new DataMessage(id, dos.readInt(), (TimedSensorReading) deserializeObject(dos.readAllBytes()));
+            case DATA -> new DataMessage(id, dos.readInt(), (TimedIdentifiedSensorReading) deserializeObject(dos.readAllBytes()));
             case ACK -> new AckMessage(id, dos.readInt());
         };
 

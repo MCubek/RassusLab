@@ -18,7 +18,7 @@ import java.nio.file.Path;
  */
 @Slf4j
 public class SensorReadingsAdapter {
-    private static final Path readingsCsv = Path.of("lab1-client/src/main/resources/readings.csv");
+    private static final Path readingsCsv = Path.of("Lab2/lab2-node/src/main/resources/readings.csv");
 
     public static SensorReading getReadingFromLine(int line) {
         try {
