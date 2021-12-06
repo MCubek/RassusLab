@@ -37,7 +37,7 @@ public class SensorService {
                 sensorClient.generateAndSendReading();
                 try {
                     //noinspection BusyWait
-                    Thread.sleep(1000);
+                    Thread.sleep(2000);
                 } catch (InterruptedException ignored) {
                 }
             }

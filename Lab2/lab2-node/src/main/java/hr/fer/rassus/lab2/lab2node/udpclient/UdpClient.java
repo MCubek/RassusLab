@@ -48,7 +48,7 @@ public class UdpClient {
         this.readings = readings;
 
         nodeAckMessages = Collections.synchronizedMap(new HashMap<>());
-        socket = new SimpleSimulatedDatagramSocket(port, 0.2, 200);
+        socket = new SimpleSimulatedDatagramSocket(port, 0.3, 1000);
     }
 
     public Thread startListener() {
@@ -133,5 +133,6 @@ public class UdpClient {
                 ack = true;
 
         } while (! ack);
+        log.info("Reading sent to node {}.", node.getId());
     }
 }
