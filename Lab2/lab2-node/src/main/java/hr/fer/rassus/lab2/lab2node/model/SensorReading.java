@@ -14,7 +14,6 @@ import java.io.Serializable;
 @Builder
 @Getter
 @Setter
-@ToString
 public class SensorReading implements Serializable {
     private Integer temperature;
     private Integer pressure;
@@ -22,4 +21,16 @@ public class SensorReading implements Serializable {
     private Integer co;
     private Integer no2;
     private Integer so2;
+
+    @Override
+    public String toString() {
+        return "[" +
+               "temp=" + temperature +
+               ", pressure=" + pressure +
+               ", humidity=" + humidity +
+               ", co=" + co +
+               ", no2=" + no2 +
+               ", so2=" + so2 +
+               ']';
+    }
 }

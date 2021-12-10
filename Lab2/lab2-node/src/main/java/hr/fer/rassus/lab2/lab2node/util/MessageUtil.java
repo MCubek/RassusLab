@@ -59,40 +59,4 @@ public class MessageUtil {
         return message;
     }
 
-    private static byte[] serializeObject(Serializable object) throws IOException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream out;
-        byte[] bytes;
-        try {
-            out = new ObjectOutputStream(bos);
-            out.writeObject(object);
-            out.flush();
-            bytes = bos.toByteArray();
-        } finally {
-            try {
-                bos.close();
-            } catch (IOException ignore) {
-            }
-        }
-        return bytes;
-    }
-
-    private static Object deserializeObject(byte[] bytes) throws IOException, ClassNotFoundException {
-        ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-        ObjectInput in = null;
-        Object o;
-        try {
-            in = new ObjectInputStream(bis);
-            o = in.readObject();
-
-        } finally {
-            try {
-                if (in != null) {
-                    in.close();
-                }
-            } catch (IOException ignore) {
-            }
-        }
-        return o;
-    }
 }

@@ -5,11 +5,13 @@ import hr.fer.rassus.lab2.lab2node.model.Node;
 import hr.fer.rassus.lab2.lab2node.model.SensorReading;
 import hr.fer.rassus.lab2.lab2node.model.TimedIdentifiedSensorReading;
 import hr.fer.rassus.lab2.lab2node.udpclient.UdpClient;
+import hr.fer.rassus.lab2.lab2node.udpclient.message.DataMessage;
 import hr.fer.rassus.lab2.lab2node.util.NodeUtil;
 import hr.fer.rassus.stupidudp.network.EmulatedSystemClock;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -47,6 +49,7 @@ public class SensorClient {
     private int port;
 
     private Map<Long, TimedIdentifiedSensorReading> readings = Collections.synchronizedMap(new HashMap<>());
+    private Map<Integer, Integer> vectorTimestamp = Collections.synchronizedMap(new HashMap<>());
     private EmulatedSystemClock clock = new EmulatedSystemClock();
 
 
@@ -56,7 +59,7 @@ public class SensorClient {
         this.peers = peers;
         this.running = new AtomicBoolean(true);
 
-        udpClient = new UdpClient(running, readings, id, port);
+        udpClient = new UdpClient(running, this, id, port);
         return udpClient.startListener();
     }
 
@@ -68,14 +71,15 @@ public class SensorClient {
         this.running.set(running);
     }
 
-    public synchronized void generateAndSendReading() {
+    public void generateAndSendReading() {
         log.debug("Generating reading...");
 
         int currentLine = (int) (NodeUtil.getUptimeSeconds() % 100);
         SensorReading currentReading = SensorReadingsAdapter.getReadingFromLine(currentLine);
 
-        TimedIdentifiedSensorReading timedIdentifiedSensorReading = new TimedIdentifiedSensorReading(currentReading, id);
-        readings.put(UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE, timedIdentifiedSensorReading);
+        incrementThisTimestamp();
+        TimedIdentifiedSensorReading timedIdentifiedSensorReading = createReading(currentReading);
+        saveReading(UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE, timedIdentifiedSensorReading, true);
 
         log.info("Generated new reading.");
 
@@ -110,16 +114,56 @@ public class SensorClient {
         }
     }
 
+    @Synchronized
+    private TimedIdentifiedSensorReading createReading(SensorReading currentReading) {
+        return new TimedIdentifiedSensorReading(currentReading, id, clock.currentTimeMillis(), Map.copyOf(vectorTimestamp));
+    }
+
+    public void saveReading(DataMessage receivedMessage) {
+        saveReading(receivedMessage.getMessageId(), receivedMessage.getReading(), false);
+    }
+
+    public void saveReading(long messageId, TimedIdentifiedSensorReading reading, boolean localReading) {
+        if (! localReading) {
+            clock.updateTimeIfNeeded(reading.getTimestamp());
+            updateVectorTimestamp(reading);
+        }
+
+        readings.putIfAbsent(messageId, reading);
+    }
+
+    @Synchronized
+    private void updateVectorTimestamp(TimedIdentifiedSensorReading reading) {
+        for (Map.Entry<Integer, Integer> entry : reading.getVectorTimestamp().entrySet()) {
+            if (entry.getValue() > vectorTimestamp.getOrDefault(entry.getKey(), 0)) {
+                vectorTimestamp.put(entry.getKey(), entry.getValue());
+            }
+        }
+        incrementThisTimestamp();
+    }
+
+    @Synchronized
+    private void incrementThisTimestamp() {
+        vectorTimestamp.compute(id, (k, v) -> {
+            if (v == null) return 1;
+            return v + 1;
+        });
+    }
+
     public void interrupt() {
         threads.forEach(Thread::interrupt);
         udpClient.getSocket().close();
     }
 
-    public void printAllData() {
+    public void printData() {
+        System.out.println("Skalarne oznake:");
+        readings.values().stream()
+                .sorted(Comparator.comparing(TimedIdentifiedSensorReading::getTimestamp))
+                .forEach(System.out::println);
 
-    }
-
-    public void printLastIntervalData() {
-
+        System.out.println("\nVektorske oznake:");
+        readings.values().stream()
+                .sorted(TimedIdentifiedSensorReading.VECTOR_TIMESTAMP_COMPARATOR)
+                .forEach(System.out::println);
     }
 }

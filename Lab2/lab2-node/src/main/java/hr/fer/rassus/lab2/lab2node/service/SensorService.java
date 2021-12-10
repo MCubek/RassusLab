@@ -37,7 +37,7 @@ public class SensorService {
                 sensorClient.generateAndSendReading();
                 try {
                     //noinspection BusyWait
-                    Thread.sleep(2000);
+                    Thread.sleep(3000);
                 } catch (InterruptedException ignored) {
                 }
             }
@@ -47,7 +47,7 @@ public class SensorService {
 
         resultsThread = new Thread(() -> {
             while (sensorClient.isRunning() && ! resultsThread.isInterrupted()) {
-                sensorClient.printLastIntervalData();
+                sensorClient.printData();
                 try {
                     // wait 5 seconds
                     //noinspection BusyWait
@@ -76,6 +76,6 @@ public class SensorService {
         sensorClient.interrupt();
         log.debug("All top level worker threads interrupted.");
 
-        sensorClient.printAllData();
+        sensorClient.printData();
     }
 }

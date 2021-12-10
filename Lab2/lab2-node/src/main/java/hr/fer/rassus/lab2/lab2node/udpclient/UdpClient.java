@@ -2,6 +2,7 @@ package hr.fer.rassus.lab2.lab2node.udpclient;
 
 import hr.fer.rassus.lab2.lab2node.model.Node;
 import hr.fer.rassus.lab2.lab2node.model.TimedIdentifiedSensorReading;
+import hr.fer.rassus.lab2.lab2node.sensor.SensorClient;
 import hr.fer.rassus.lab2.lab2node.udpclient.message.AckMessage;
 import hr.fer.rassus.lab2.lab2node.udpclient.message.DataMessage;
 import hr.fer.rassus.lab2.lab2node.udpclient.message.Message;
@@ -32,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class UdpClient {
 
     private final AtomicBoolean running;
-    private final Map<Long, TimedIdentifiedSensorReading> readings;
+    private final SensorClient sensorClient;
     @Getter
     private final SimpleSimulatedDatagramSocket socket;
     private Thread listenerThread;
@@ -43,9 +44,9 @@ public class UdpClient {
 
     private final Map<Integer, BlockingQueue<AckMessage>> nodeAckMessages;
 
-    public UdpClient(AtomicBoolean running, Map<Long, TimedIdentifiedSensorReading> readings, int id, int port) throws SocketException {
+    public UdpClient(AtomicBoolean running, SensorClient sensorClient, int id, int port) throws SocketException {
         this.running = running;
-        this.readings = readings;
+        this.sensorClient = sensorClient;
         this.id = id;
         this.port = port;
 
@@ -107,7 +108,7 @@ public class UdpClient {
         socket.send(sendPacket);
         log.debug("Ack message sent to node {}", receivedMessage.getNodeId());
 
-        readings.putIfAbsent(receivedMessage.getMessageId(), receivedMessage.getReading());
+        sensorClient.saveReading(receivedMessage);
     }
 
     private void handleAckMessage(AckMessage receivedMessage) {
