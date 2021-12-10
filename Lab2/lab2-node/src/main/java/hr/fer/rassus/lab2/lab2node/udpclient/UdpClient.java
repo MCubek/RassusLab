@@ -55,7 +55,7 @@ public class UdpClient {
     }
 
     public Thread startListener() {
-        log.debug("Starting udp listener on port {}", port);
+        log.info("Starting udp listener on port {}", port);
         listenerThread = new Thread(() -> {
             byte[] rcvBuf = new byte[2048];
 
@@ -65,7 +65,7 @@ public class UdpClient {
                     socket.receive(response);
                     log.debug("Packet received with size {}.", response.getLength());
                 } catch (SocketException e) {
-                    log.debug("Socket closed. Exiting.");
+                    log.warn("Socket closed. Exiting.");
                     break;
                 } catch (IOException e) {
                     log.error("Error while receiving response", e);
@@ -104,26 +104,25 @@ public class UdpClient {
         DatagramPacket sendPacket = new DatagramPacket(sendBuf,
                 sendBuf.length, packet.getAddress(), packet.getPort());
 
-        log.debug("Received data from node {}, sending ack message...", receivedMessage.getNodeId());
+        log.debug("Received data with id {} from node {}, sending ack message...", receivedMessage.getMessageId(), receivedMessage.getNodeId());
         socket.send(sendPacket);
-        log.debug("Ack message sent to node {}", receivedMessage.getNodeId());
+        log.debug("Ack message for {} sent to node {}", receivedMessage.getMessageId(), receivedMessage.getNodeId());
 
         sensorClient.saveReading(receivedMessage);
     }
 
     private void handleAckMessage(AckMessage receivedMessage) {
-        log.debug("Received ack message from node {},sending to queue.", receivedMessage.getNodeId());
+        log.debug("Received ack message from node {}, sending it to its queue.", receivedMessage.getNodeId());
         int nodeId = receivedMessage.getNodeId();
 
         BlockingQueue<AckMessage> queue = nodeAckMessages.computeIfAbsent(nodeId, k -> new LinkedBlockingQueue<>());
         queue.add(receivedMessage);
     }
 
-    public void sendReadingToNode(TimedIdentifiedSensorReading currentReading, Node node) throws IOException {
-        log.debug("Sending reading to node {}.", node.getId());
-        long messageId = UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE;
+    public void sendReadingToNode(TimedIdentifiedSensorReading currentReading, long readingId, Node node) throws IOException {
+        log.debug("Sending reading {} to node {}.", readingId, node.getId());
 
-        byte[] sendBuf = MessageUtil.serializeMessage(new DataMessage(messageId, id, currentReading));
+        byte[] sendBuf = MessageUtil.serializeMessage(new DataMessage(readingId, id, currentReading));
 
         DatagramPacket packet = new DatagramPacket(sendBuf, sendBuf.length,
                 InetAddress.getByName(node.getAddress()), node.getPort());
@@ -133,7 +132,7 @@ public class UdpClient {
         boolean ack = false;
         do {
             socket.send(packet);
-            log.debug("Reading sent to node {}. Waiting for ack...", node.getId());
+            log.debug("Reading {} sent to node {}. Waiting for ack...", readingId, node.getId());
 
             AckMessage ackMessage;
             try {
@@ -143,16 +142,16 @@ public class UdpClient {
                     continue;
                 else return;
             }
-            if (ackMessage != null && ackMessage.getMessageId() == messageId) {
+            if (ackMessage != null && ackMessage.getMessageId() == readingId) {
                 ack = true;
-                log.debug("Valid ack received from node {}.", node.getId());
+                log.debug("Valid ack received from node {} for reading {}.", node.getId(), readingId);
             } else {
-                log.debug("Valid ak not received, retrying...");
+                log.debug("Valid ack not received from node {} for reading {}, retrying...", node.getId(), readingId);
             }
         } while (! ack && this.running.get());
         if (ack)
-            log.info("Reading sent and acknowledged to node {}.", node.getId());
+            log.info("Reading {} acknowledged by node {}.", readingId, node.getId());
         else
-            log.debug("Sending thread interrupted and is exiting.");
+            log.warn("Sending thread interrupted and is exiting.");
     }
 }

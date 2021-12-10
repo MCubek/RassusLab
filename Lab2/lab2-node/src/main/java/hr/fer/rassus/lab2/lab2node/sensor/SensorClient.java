@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author MatejCubek
- * @project lab1-server
+ * @project lab2-sensor
  * @created 28/10/2021
  */
 @Component
@@ -72,22 +72,23 @@ public class SensorClient {
     }
 
     public void generateAndSendReading() {
-        log.debug("Generating reading...");
+        log.info("GENERATING NEW READING...");
 
         int currentLine = (int) (NodeUtil.getUptimeSeconds() % 100);
         SensorReading currentReading = SensorReadingsAdapter.getReadingFromLine(currentLine);
 
         incrementThisTimestamp();
         TimedIdentifiedSensorReading timedIdentifiedSensorReading = createReading(currentReading);
-        saveReading(UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE, timedIdentifiedSensorReading, true);
+        long readingId = UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE;
+        saveReading(readingId, timedIdentifiedSensorReading, true);
 
-        log.info("Generated new reading.");
+        log.info("Generated new reading with id {}.", readingId);
 
         threads = new ArrayList<>();
         for (Node node : peers) {
             Thread thread = new Thread(() -> {
                 try {
-                    udpClient.sendReadingToNode(timedIdentifiedSensorReading, node);
+                    udpClient.sendReadingToNode(timedIdentifiedSensorReading, readingId, node);
                 } catch (IOException e) {
                     log.error("Error while sending message to node.", e);
                 }
@@ -95,7 +96,6 @@ public class SensorClient {
             thread.start();
             threads.add(thread);
         }
-        log.debug("Started all threads for sending current reading.");
 
         boolean interrupted = false;
 
@@ -104,13 +104,13 @@ public class SensorClient {
                 t.join();
             } catch (InterruptedException e) {
                 interrupted = true;
-                log.debug("Sending thread interrupted.");
+                log.warn("Sending thread interrupted.");
             }
         }
         if (! interrupted) {
-            log.info("Sent reading to all peers.");
+            log.info("Sent reading {} to all peers.", readingId);
         } else {
-            log.debug("Sending thread interrupted and readings have not been sent to all peers.");
+            log.warn("Sending thread interrupted and reading {} has not been sent to all peers.", readingId);
         }
     }
 
@@ -155,6 +155,7 @@ public class SensorClient {
         udpClient.getSocket().close();
     }
 
+    @Synchronized
     public void printData() {
         System.out.println("Skalarne oznake:");
         readings.values().stream()
@@ -165,5 +166,46 @@ public class SensorClient {
         readings.values().stream()
                 .sorted(TimedIdentifiedSensorReading.VECTOR_TIMESTAMP_COMPARATOR)
                 .forEach(System.out::println);
+
+        System.out.println("\n" + averageReadings(readings.values()) + "\n");
+
+        readings = Collections.synchronizedMap(new HashMap<>());
     }
+
+    private static String averageReadings(Collection<TimedIdentifiedSensorReading> readings) {
+        double temperature = readings.stream()
+                .filter(v -> v.getTemperature() != null)
+                .mapToDouble(TimedIdentifiedSensorReading::getTemperature)
+                .average().orElse(0);
+        double pressure = readings.stream()
+                .filter(v -> v.getPressure() != null)
+                .mapToDouble(TimedIdentifiedSensorReading::getPressure)
+                .average().orElse(0);
+        double humidity = readings.stream()
+                .filter(v -> v.getHumidity() != null)
+                .mapToDouble(TimedIdentifiedSensorReading::getHumidity)
+                .average().orElse(0);
+        double co = readings.stream()
+                .filter(v -> v.getCo() != null && v.getCo() != 0)
+                .mapToDouble(TimedIdentifiedSensorReading::getCo)
+                .average().orElse(0);
+        double no2 = readings.stream()
+                .filter(v -> v.getNo2() != null && v.getNo2() != 0)
+                .mapToDouble(TimedIdentifiedSensorReading::getNo2)
+                .average().orElse(0);
+        double so2 = readings.stream()
+                .filter(v -> v.getSo2() != null && v.getSo2() != 0)
+                .mapToDouble(TimedIdentifiedSensorReading::getSo2)
+                .average().orElse(0);
+
+        return "AVG[" +
+               "temp=" + temperature +
+               ", pressure=" + pressure +
+               ", humidity=" + humidity +
+               ", co=" + co +
+               ", no2=" + no2 +
+               ", so2=" + so2 +
+               ']';
+    }
+
 }

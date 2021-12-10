@@ -35,11 +35,6 @@ public class SensorService {
         sendThread = new Thread(() -> {
             while (sensorClient.isRunning() && ! sendThread.isInterrupted()) {
                 sensorClient.generateAndSendReading();
-                try {
-                    //noinspection BusyWait
-                    Thread.sleep(3000);
-                } catch (InterruptedException ignored) {
-                }
             }
         });
         sendThread.start();
