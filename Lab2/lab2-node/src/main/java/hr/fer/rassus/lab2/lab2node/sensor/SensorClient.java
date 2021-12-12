@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.SocketException;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -39,7 +40,7 @@ public class SensorClient {
     private Set<Node> peers;
 
     private AtomicBoolean running;
-    private List<Thread> threads;
+    private ExecutorService pool;
 
     private UdpClient udpClient;
 
@@ -58,6 +59,7 @@ public class SensorClient {
         latitude = 45.75 + (45.85 - 45.75) * random.nextDouble();
         this.peers = peers;
         this.running = new AtomicBoolean(true);
+        pool = Executors.newFixedThreadPool(6);
 
         udpClient = new UdpClient(running, this, id, port);
         return udpClient.startListener();
@@ -84,27 +86,27 @@ public class SensorClient {
 
         log.info("Generated new reading with id {}.", readingId);
 
-        threads = new ArrayList<>();
+        List<Future<?>> results = new ArrayList<>();
         for (Node node : peers) {
-            Thread thread = new Thread(() -> {
+            results.add(pool.submit(() -> {
                 try {
                     udpClient.sendReadingToNode(timedIdentifiedSensorReading, readingId, node);
                 } catch (IOException e) {
                     log.error("Error while sending message to node.", e);
                 }
-            });
-            thread.start();
-            threads.add(thread);
+            }));
         }
 
         boolean interrupted = false;
 
-        for (Thread t : threads) {
+        for (Future<?> future : results) {
             try {
-                t.join();
-            } catch (InterruptedException e) {
+                future.get();
+            } catch (InterruptedException | CancellationException e) {
                 interrupted = true;
                 log.warn("Sending thread interrupted.");
+            } catch (ExecutionException e) {
+                log.error("Error while execution.", e);
             }
         }
         if (! interrupted) {
@@ -151,7 +153,7 @@ public class SensorClient {
     }
 
     public void interrupt() {
-        threads.forEach(Thread::interrupt);
+        pool.shutdownNow();
         udpClient.getSocket().close();
     }
 
