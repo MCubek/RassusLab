@@ -1,4 +1,4 @@
-package hr.fer.rassus.lab3.temperaturemicroservice.config;
+package hr.fer.rassus.lab3.temperaturemicroservice.service;
 
 /**
  * @author MatejCubek

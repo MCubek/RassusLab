@@ -2,7 +2,7 @@
   "properties": [
     {
       "name": "temperature.source-unit",
-      "type": "hr.fer.rassus.lab3.temperaturemicroservice.config.TemperatureUnit",
+      "type": "hr.fer.rassus.lab3.temperaturemicroservice.service.TemperatureUnit",
       "description": "Unit of temperature that the sensor generates from its source."
   }
 ] }
