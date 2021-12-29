@@ -2,7 +2,7 @@
   "properties": [
     {
       "name": "temperature.serve-unit",
-      "type": "hr.fer.rassus.lab3.aggregatormicroservice.config.TemperatureUnit",
+      "type": "hr.fer.rassus.lab3.aggregatormicroservice.model.TemperatureUnit",
       "description": "Serving unit for REST endpoint."
     },
     {

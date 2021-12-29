@@ -1,4 +1,4 @@
-package hr.fer.rassus.lab3.aggregatormicroservice.config;
+package hr.fer.rassus.lab3.aggregatormicroservice.model;
 
 /**
  * @author MatejCubek
