@@ -1,0 +1,18 @@
+{
+  "properties": [
+    {
+      "name": "temperature.serve-unit",
+      "type": "hr.fer.rassus.lab3.aggregatormicroservice.config.TemperatureUnit",
+      "description": "Serving unit for REST endpoint."
+    },
+    {
+      "name": "sensor.temperature",
+      "type": "java.lang.String",
+      "description": "Description for sensor.temperature."
+    },
+    {
+      "name": "sensor.humidity",
+      "type": "java.lang.String",
+      "description": "Description for sensor.humidity."
+    }
+  ] }
