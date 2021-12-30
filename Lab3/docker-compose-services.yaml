@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  temperature-service:
+    image: docker.io/library/temperature-microservice:0.0.1-SNAPSHOT
+  humidity-service:
+    image: docker.io/library/humidity-microservice:0.0.1-SNAPSHOT
+  aggregator-service:
+    image: docker.io/library/aggregator-microservice:0.0.1-SNAPSHOT
+    ports:
+      - "8080:8080"
