@@ -2,13 +2,11 @@ version: "3.9"
 services:
   config-server:
     image: docker.io/library/config-server-microservice:0.0.1-SNAPSHOT
-    ports:
-      - "8888:8888"
   eureka-server:
     image: docker.io/library/eureka-server-microservice:0.0.1-SNAPSHOT
     depends_on:
       - config-server
-    environment:
-      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
-    ports:
-      - "8761:8761"
+networks:
+  default:
+    name: lab3_network
+    driver: bridge

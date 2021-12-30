@@ -1,10 +1,14 @@
 version: "3.9"
 services:
-  temperature-service:
+  temperature-service-pod:
     image: docker.io/library/temperature-microservice:0.0.1-SNAPSHOT
-  humidity-service:
+  humidity-service-pod:
     image: docker.io/library/humidity-microservice:0.0.1-SNAPSHOT
-  aggregator-service:
+  aggregator-service-pod:
     image: docker.io/library/aggregator-microservice:0.0.1-SNAPSHOT
     ports:
       - "8080:8080"
+networks:
+  default:
+    external: true
+    name: lab3_network

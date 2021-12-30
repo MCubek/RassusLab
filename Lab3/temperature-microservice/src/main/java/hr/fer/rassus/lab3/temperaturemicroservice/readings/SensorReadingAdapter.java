@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.springframework.core.io.ClassPathResource;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -18,7 +19,15 @@ import java.nio.file.Path;
  */
 @Slf4j
 public class SensorReadingAdapter {
-    private static final Path readingsCsv = Path.of("Lab3/temperature-microservice/src/main/resources/readings.csv");
+    private static Path readingsCsv = null;
+
+    static {
+        try {
+            readingsCsv = new ClassPathResource("readings.csv").getFile().toPath();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public static SensorReading getReadingFromLine(int line) {
         try {
