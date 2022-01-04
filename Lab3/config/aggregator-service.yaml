@@ -1,0 +1,7 @@
+server:
+  port: 8080
+temperature:
+  serve-unit: K
+sensor:
+  temperature: temperature-service
+  humidity: humidity-service
